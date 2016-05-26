@@ -9,25 +9,47 @@
 #define MAX_LOADSTRING 100
 
 const REAL circle_size = 7;
-const REAL arm1_length = 100;
-const REAL arm2_length = 200;
+const REAL arm1_length = 150;
+const REAL arm2_length = 150;
 
 HWND hwndButton;
-RECT drawArea1 = { 0, 0, 1000, 200 };
+RECT drawArea1 = { 0, 0, 310, 200 };
 
 PointF arm1_start(0.0, (REAL)drawArea1.bottom);
 PointF arm1_end(arm1_length, (REAL)drawArea1.bottom);
 PointF arm2_start(arm1_end.X, arm1_end.Y);
 PointF arm2_end((REAL)(arm1_length + arm2_length), (REAL)drawArea1.bottom);
-REAL arc1 = 0;
-REAL arc2 = 0;
+PointF triangle1_1((REAL)200, (REAL)(drawArea1.bottom));
+PointF triangle1_2((REAL)220, (REAL)(drawArea1.bottom));
+PointF triangle1_3((REAL)210, (REAL)(drawArea1.bottom - 20));
+PointF triangle2_1((REAL)221, (REAL)(drawArea1.bottom));
+PointF triangle2_2((REAL)241, (REAL)(drawArea1.bottom));
+PointF triangle2_3((REAL)231, (REAL)(drawArea1.bottom - 20));
+PointF triangle3_1((REAL)242, (REAL)(drawArea1.bottom));
+PointF triangle3_2((REAL)262, (REAL)(drawArea1.bottom));
+PointF triangle3_3((REAL)252, (REAL)(drawArea1.bottom - 20));
+PointF triangle4_1((REAL)200, (REAL)(drawArea1.bottom - 21));
+PointF triangle4_2((REAL)220, (REAL)(drawArea1.bottom - 21));
+PointF triangle4_3((REAL)210, (REAL)(drawArea1.bottom - 41));
+PointF triangle5_1((REAL)221, (REAL)(drawArea1.bottom - 21));
+PointF triangle5_2((REAL)241, (REAL)(drawArea1.bottom - 21));
+PointF triangle5_3((REAL)231, (REAL)(drawArea1.bottom - 41));
+PointF triangle6_1((REAL)242, (REAL)(drawArea1.bottom - 21));
+PointF triangle6_2((REAL)262, (REAL)(drawArea1.bottom - 21));
+PointF triangle6_3((REAL)252, (REAL)(drawArea1.bottom - 41));
+REAL arc1 = 30;
+REAL arc2 = 30;
+bool grabbed[6] = { false, false, false, false, false, false };
 
+void initialize(void);
 void paint(HDC);
 void repaintWindow(HWND, HDC &, PAINTSTRUCT &, RECT *);
 void arm1_moveUp(void);
 void arm1_moveDown(void);
 void arm2_moveUp(void);
 void arm2_moveDown(void);
+void grab(void);
+void drop(void);
 
 // Global Variables:
 HINSTANCE hInst;                                // current instance
@@ -52,6 +74,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	GdiplusStartupInput gdiplusStartupInput;
 	ULONG_PTR           gdiplusToken;
 	GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, nullptr);
+	initialize();
 
 	// Initialize global strings
 	LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
@@ -193,6 +216,32 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 		hInstance,
 		nullptr);
 
+	hwndButton = CreateWindow(
+		TEXT("button"),
+		TEXT("Grab"),
+		WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
+		390,
+		360,
+		80,
+		50,
+		hWnd,
+		(HMENU)ID_BUTTON6,
+		hInstance,
+		nullptr);
+
+	hwndButton = CreateWindow(
+		TEXT("button"),
+		TEXT("Drop"),
+		WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
+		470,
+		360,
+		80,
+		50,
+		hWnd,
+		(HMENU)ID_BUTTON7,
+		hInstance,
+		nullptr);
+
 	if (!hWnd)
 	{
 		return FALSE;
@@ -244,6 +293,14 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			break;
 		case ID_BUTTON5: // Arm 2 down
 			arm2_moveDown();
+			repaintWindow(hWnd, hdc, ps, &drawArea1);
+			break;
+		case ID_BUTTON6: // Grab button
+			grab();
+			repaintWindow(hWnd, hdc, ps, &drawArea1);
+			break;
+		case ID_BUTTON7: // Drop button
+			drop();
 			repaintWindow(hWnd, hdc, ps, &drawArea1);
 			break;
 		case IDM_ABOUT:
@@ -299,6 +356,17 @@ int OnCreate(HWND window)
 	return 0;
 }
 
+void initialize()
+{
+	arm1_end.Y = (REAL)(drawArea1.bottom - arm1_length * sin(arc1 * (M_PI / 180)));
+	arm1_end.X = (REAL)(arm1_length * abs(cos(arc1 * (M_PI / 180))));
+
+	arm2_start = arm1_end;
+
+	arm2_end.Y = (REAL)(arm2_start.Y - arm2_length * sin(arc2 * (M_PI / 180)));
+	arm2_end.X = (REAL)(arm2_length * cos(arc2 * (M_PI / 180)) + arm2_start.X);
+}
+
 void repaintWindow(HWND hWnd, HDC &hdc, PAINTSTRUCT &ps, RECT *drawArea)
 {
 	if (drawArea == nullptr)
@@ -316,19 +384,34 @@ void paint(HDC hdc)
 	Pen pen1(Color(255, 0, 0, 255));
 	Pen pen2(Color(255, 255, 0, 0));
 	Pen pen3(Color(255, 0, 255, 0));
-	SolidBrush brush(Color::Red);
+	SolidBrush brushRed(Color::Red);
+	SolidBrush brushBlack(Color::Black);
 
 	graphics.DrawLine(&pen1, arm1_start, arm1_end);
 	graphics.DrawLine(&pen1, arm2_start, arm2_end);
 	graphics.DrawEllipse(&pen2, (REAL)(arm1_start.X - arm1_length), (REAL)(arm1_start.Y - arm1_length), (REAL)arm1_length * 2, (REAL)arm1_length * 2);
 	graphics.DrawEllipse(&pen3, (REAL)(arm2_start.X - arm2_length), (REAL)(arm2_start.Y - arm2_length), (REAL)arm2_length * 2, (REAL)arm2_length * 2);
-	graphics.FillEllipse(&brush, arm1_end.X - circle_size / 2, arm1_end.Y - circle_size / 2, circle_size, circle_size);
-	graphics.FillEllipse(&brush, arm2_end.X - circle_size / 2, arm2_end.Y - circle_size / 2, circle_size, circle_size);
+	graphics.FillEllipse(&brushRed, arm1_end.X - circle_size / 2, arm1_end.Y - circle_size / 2, circle_size, circle_size);
+	graphics.FillEllipse(&brushRed, arm2_end.X - circle_size / 2, arm2_end.Y - circle_size / 2, circle_size, circle_size);
+
+	PointF triangle1[3] = { triangle1_1, triangle1_2, triangle1_3 };
+	PointF triangle2[3] = { triangle2_1, triangle2_2, triangle2_3 };
+	PointF triangle3[3] = { triangle3_1, triangle3_2, triangle3_3 };
+	PointF triangle4[3] = { triangle4_1, triangle4_2, triangle4_3 };
+	PointF triangle5[3] = { triangle5_1, triangle5_2, triangle5_3 };
+	PointF triangle6[3] = { triangle6_1, triangle6_2, triangle6_3 };
+
+	graphics.FillPolygon(&brushBlack, triangle1, 3);
+	graphics.FillPolygon(&brushBlack, triangle2, 3);
+	graphics.FillPolygon(&brushBlack, triangle3, 3);
+	graphics.FillPolygon(&brushBlack, triangle4, 3);
+	graphics.FillPolygon(&brushBlack, triangle5, 3);
+	graphics.FillPolygon(&brushBlack, triangle6, 3);
 }
 
 void arm1_moveUp()
 {
-	if (arc1 < 90 && arm2_end.X > 0 && arm1_end.Y > drawArea1.top && arm1_end.X < drawArea1.right && arm2_end.Y > drawArea1.top && arm2_end.X < drawArea1.right)
+	if (arc1 < 90 && arm2_end.X > drawArea1.left && arm1_end.Y > drawArea1.top && arm1_end.X < drawArea1.right && arm2_end.Y > drawArea1.top && arm2_end.X < drawArea1.right)
 	{
 		arc1++;
 
@@ -358,12 +441,24 @@ void arm1_moveDown()
 
 void arm2_moveUp()
 {
-	if (arm2_end.X > 0 && arm2_end.Y > drawArea1.top && arm2_end.X < drawArea1.right)
+	if (arm2_end.X > drawArea1.left && arm2_end.Y > drawArea1.top && arm2_end.X < drawArea1.right)
 	{
 		arc2++;
 
 		arm2_end.Y = (REAL)(arm2_start.Y - arm2_length * sin(arc2 * (M_PI / 180)));
 		arm2_end.X = (REAL)(arm2_length * cos(arc2 * (M_PI / 180)) + arm2_start.X);
+
+		if (grabbed[0])
+		{
+			triangle1_1.X = arm2_end.X - 10;
+			triangle1_1.Y = arm2_end.Y + 10;
+
+			triangle1_2.X = arm2_end.X + 10;
+			triangle1_2.Y = arm2_end.Y + 10;
+
+			triangle1_3.X = arm2_end.X;
+			triangle1_3.Y = arm2_end.Y - 10;
+		}
 	}
 }
 
@@ -375,5 +470,41 @@ void arm2_moveDown()
 
 		arm2_end.Y = (REAL)(arm2_start.Y - arm2_length * sin(arc2 * (M_PI / 180)));
 		arm2_end.X = (REAL)(arm2_length * cos(arc2 * (M_PI / 180)) + arm2_start.X);
+
+		if (grabbed[0])
+		{
+			triangle1_1.X = arm2_end.X - 10;
+			triangle1_1.Y = arm2_end.Y + 10;
+
+			triangle1_2.X = arm2_end.X + 10;
+			triangle1_2.Y = arm2_end.Y + 10;
+
+			triangle1_3.X = arm2_end.X;
+			triangle1_3.Y = arm2_end.Y - 10;
+		}
 	}
+}
+
+void grab()
+{
+	REAL distance1 = sqrt((arm2_end.X - triangle1_3.X) * (arm2_end.X - triangle1_3.X) + (arm2_end.Y - (triangle1_3.Y + 10)) * (arm2_end.Y - (triangle1_3.Y + 10)));
+
+	if (distance1 < 5)
+	{
+		grabbed[0] = true;
+
+		triangle1_1.X = arm2_end.X - 10;
+		triangle1_1.Y = arm2_end.Y + 10;
+
+		triangle1_2.X = arm2_end.X + 10;
+		triangle1_2.Y = arm2_end.Y + 10;
+
+		triangle1_3.X = arm2_end.X;
+		triangle1_3.Y = arm2_end.Y - 10;
+	}
+}
+
+void drop()
+{
+	grabbed[0] = false;
 }
