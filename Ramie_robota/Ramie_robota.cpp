@@ -12,8 +12,6 @@ const REAL circle_size = 7;
 const REAL arm1_length = 100;
 const REAL arm2_length = 200;
 
-REAL lol = 0;
-
 HWND hwndButton;
 RECT drawArea1 = { 0, 0, 1000, 200 };
 
