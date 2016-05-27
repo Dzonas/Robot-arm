@@ -5,8 +5,10 @@
 #include "Ramie_robota.h"
 #define _USE_MATH_DEFINES
 #include <cmath>
+#include <vector>
 
 #define MAX_LOADSTRING 100
+#define TMR_1 1
 
 const REAL circle_size = 7;
 const REAL arm1_length = 150;
@@ -25,6 +27,11 @@ PointF arm2_start(arm1_end.X, arm1_end.Y);
 PointF arm2_end((REAL)(arm1_length + arm2_length), (REAL)drawArea1.bottom);
 PointF triangles[N_TRIANGLE][3];
 bool grabbed[N_TRIANGLE] = { false, false, false, false, false, false };
+bool update_pos = false;
+int iter = 0;
+
+std::vector<REAL> arm_pos[2][2];
+std::vector<REAL> triangle_pos[N_TRIANGLE][2];
 
 void initialize(void);
 void paint(HDC);
@@ -35,6 +42,9 @@ void arm2_moveUp(void);
 void arm2_moveDown(void);
 void grab(void);
 void drop(void);
+void update(void);
+void drop_update(void);
+void get_pos(void);
 
 // Global Variables:
 HINSTANCE hInst;                                // current instance
@@ -140,7 +150,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 		TEXT("button"),
 		TEXT("Draw"),
 		WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
-		300,
+		250,
 		300,
 		80,
 		50,
@@ -153,7 +163,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 		TEXT("button"),
 		TEXT("Arm 1 up"),
 		WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
-		390,
+		340,
 		300,
 		80,
 		50,
@@ -166,7 +176,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 		TEXT("button"),
 		TEXT("Arm 1 down"),
 		WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
-		470,
+		420,
 		300,
 		80,
 		50,
@@ -179,7 +189,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 		TEXT("button"),
 		TEXT("Arm 2 up"),
 		WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
-		560,
+		510,
 		300,
 		80,
 		50,
@@ -192,7 +202,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 		TEXT("button"),
 		TEXT("Arm 2 down"),
 		WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
-		640,
+		590,
 		300,
 		80,
 		50,
@@ -205,7 +215,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 		TEXT("button"),
 		TEXT("Grab"),
 		WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
-		390,
+		250,
 		360,
 		80,
 		50,
@@ -218,7 +228,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 		TEXT("button"),
 		TEXT("Drop"),
 		WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
-		470,
+		330,
 		360,
 		80,
 		50,
@@ -226,6 +236,84 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 		(HMENU)ID_BUTTON7,
 		hInstance,
 		nullptr);
+
+	hwndButton = CreateWindow(
+		TEXT("button"),
+		TEXT("Start rec"),
+		WS_CHILD | WS_VISIBLE | BS_AUTORADIOBUTTON,
+		420, 360, 80, 50,
+		hWnd,
+		(HMENU)ID_BUTTON8,
+		hInstance,
+		nullptr);
+
+	hwndButton = CreateWindow(
+		TEXT("button"),
+		TEXT("Stop rec"),
+		WS_CHILD | WS_VISIBLE | BS_AUTORADIOBUTTON,
+		500, 360, 80, 50,
+		hWnd,
+		(HMENU)ID_BUTTON9,
+		hInstance,
+		nullptr);
+
+	/*
+	hwndButton = CreateWindow(
+		TEXT("button"),
+		TEXT("Start rec"),
+		WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
+		420,
+		360,
+		80,
+		50,
+		hWnd,
+		(HMENU)ID_BUTTON8,
+		hInstance,
+		nullptr);
+
+	hwndButton = CreateWindow(
+		TEXT("button"),
+		TEXT("Stop rec"),
+		WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
+		500,
+		360,
+		80,
+		50,
+		hWnd,
+		(HMENU)ID_BUTTON9,
+		hInstance,
+		nullptr);*/
+
+	hwndButton = CreateWindow(
+		TEXT("button"),
+		TEXT("Replay"),
+		WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
+		590,
+		360,
+		80,
+		50,
+		hWnd,
+		(HMENU)ID_BUTTON10,
+		hInstance,
+		nullptr);
+
+	hwndButton = CreateWindow(
+		TEXT("button"),
+		TEXT("Reset"),
+		WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
+		670,
+		360,
+		80,
+		50,
+		hWnd,
+		(HMENU)ID_BUTTON11,
+		hInstance,
+		nullptr);
+
+	/*
+	hwndButton = CreateWindow(TEXT("button"), TEXT("Timer OFF"),
+		WS_CHILD | WS_VISIBLE | BS_AUTORADIOBUTTON,
+		300, 200, 100, 30, hWnd, (HMENU)ID_RBUTTON2, GetModuleHandle(NULL), NULL);*/
 
 	if (!hWnd)
 	{
@@ -288,6 +376,19 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			drop();
 			repaintWindow(hWnd, hdc, ps, &drawArea1);
 			break;
+		case ID_BUTTON8: // Start rec
+			update_pos = true;
+			update();
+			break;
+		case ID_BUTTON9: // Stop rec
+			update_pos = false;
+			break;
+		case ID_BUTTON10: // Replay
+			SetTimer(hWnd, TMR_1, 50, 0);
+			break;
+		case ID_BUTTON11: // Reset
+			drop_update();
+			break;
 		case IDM_ABOUT:
 			DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
 			break;
@@ -309,6 +410,26 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	break;
 	case WM_DESTROY:
 		PostQuitMessage(0);
+		break;
+	case WM_TIMER:
+		switch (wParam)
+		{
+		case TMR_1:
+			if (arm_pos[0][0].size() > 0 && !update_pos)
+			{
+				if (iter == arm_pos[0][0].size() - 1)
+				{
+					KillTimer(hWnd, TMR_1);
+					iter = 0;
+					break;
+				}
+				get_pos();
+				repaintWindow(hWnd, hdc, ps, &drawArea1);
+			}
+			else
+				KillTimer(hWnd, TMR_1);
+			break;
+		}
 		break;
 	default:
 		return DefWindowProc(hWnd, message, wParam, lParam);
@@ -334,11 +455,6 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 		break;
 	}
 	return (INT_PTR)FALSE;
-}
-
-int OnCreate(HWND window)
-{
-	return 0;
 }
 
 void initialize()
@@ -467,6 +583,9 @@ void arm2_moveUp()
 				break;
 			}
 	}
+
+	if (update_pos)
+		update();
 }
 
 void arm2_moveDown()
@@ -493,6 +612,9 @@ void arm2_moveDown()
 				break;
 			}
 	}
+
+	if (update_pos)
+		update();
 }
 
 void grab()
@@ -521,6 +643,9 @@ void grab()
 			break;
 		}
 	}
+
+	if (update_pos)
+		update();
 }
 
 void drop()
@@ -531,4 +656,59 @@ void drop()
 			grabbed[i] = false;
 			break;
 		}
+}
+
+void update()
+{
+	arm_pos[0][0].push_back(arm1_end.X);
+	arm_pos[0][1].push_back(arm1_end.Y);
+	arm_pos[1][0].push_back(arm2_end.X);
+	arm_pos[1][1].push_back(arm2_end.Y);
+
+	for (int i = 0; i < N_TRIANGLE; i++)
+	{
+		triangle_pos[i][0].push_back(triangles[i][0].X + 10);
+		triangle_pos[i][1].push_back(triangles[i][0].Y - 10);
+	}
+}
+
+void drop_update()
+{
+
+	for (int i = 0; i < 2; i++)
+		for (int j = 0; j < 2; j++)
+			while (arm_pos[i][j].size() > 0)
+				arm_pos[i][j].pop_back();
+
+	for (int i = 0; i < N_TRIANGLE; i++)
+	{
+		while (triangle_pos[i][0].size() > 0)
+			triangle_pos[i][0].pop_back();
+
+		while (triangle_pos[i][1].size() > 0)
+			triangle_pos[i][1].pop_back();
+	}
+}
+
+void get_pos()
+{
+	arm1_end.Y = arm_pos[0][1][iter];
+	arm1_end.X = arm_pos[0][0][iter];
+	arm2_start = arm1_end;
+	arm2_end.Y = arm_pos[1][1][iter];
+	arm2_end.X = arm_pos[1][0][iter];
+
+	for (int i = 0; i < N_TRIANGLE; i++)
+	{
+		triangles[i][0].X = triangle_pos[i][0][iter] - 10;
+		triangles[i][0].Y = triangle_pos[i][1][iter] + 10;
+
+		triangles[i][1].X = triangle_pos[i][0][iter] + 10;
+		triangles[i][1].Y = triangle_pos[i][1][iter] + 10;
+
+		triangles[i][2].X = triangle_pos[i][0][iter];
+		triangles[i][2].Y = triangle_pos[i][1][iter] - 10;
+	}
+
+	iter++;
 }
