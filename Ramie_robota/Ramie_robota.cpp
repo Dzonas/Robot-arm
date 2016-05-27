@@ -150,10 +150,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 		TEXT("button"),
 		TEXT("Draw"),
 		WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
-		250,
-		300,
-		80,
-		50,
+		250, 300, 80, 50,
 		hWnd,
 		(HMENU)ID_BUTTON1,
 		hInstance,
@@ -163,10 +160,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 		TEXT("button"),
 		TEXT("Arm 1 up"),
 		WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
-		340,
-		300,
-		80,
-		50,
+		340, 300, 80, 50,
 		hWnd,
 		(HMENU)ID_BUTTON2,
 		hInstance,
@@ -176,10 +170,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 		TEXT("button"),
 		TEXT("Arm 1 down"),
 		WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
-		420,
-		300,
-		80,
-		50,
+		420, 300, 80, 50,
 		hWnd,
 		(HMENU)ID_BUTTON3,
 		hInstance,
@@ -189,10 +180,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 		TEXT("button"),
 		TEXT("Arm 2 up"),
 		WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
-		510,
-		300,
-		80,
-		50,
+		510, 300, 80, 50,
 		hWnd,
 		(HMENU)ID_BUTTON4,
 		hInstance,
@@ -202,10 +190,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 		TEXT("button"),
 		TEXT("Arm 2 down"),
 		WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
-		590,
-		300,
-		80,
-		50,
+		590, 300, 80, 50,
 		hWnd,
 		(HMENU)ID_BUTTON5,
 		hInstance,
@@ -215,10 +200,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 		TEXT("button"),
 		TEXT("Grab"),
 		WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
-		250,
-		360,
-		80,
-		50,
+		250, 360, 80, 50,
 		hWnd,
 		(HMENU)ID_BUTTON6,
 		hInstance,
@@ -228,10 +210,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 		TEXT("button"),
 		TEXT("Drop"),
 		WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
-		330,
-		360,
-		80,
-		50,
+		330, 360, 80, 50,
 		hWnd,
 		(HMENU)ID_BUTTON7,
 		hInstance,
@@ -257,41 +236,11 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 		hInstance,
 		nullptr);
 
-	/*
-	hwndButton = CreateWindow(
-		TEXT("button"),
-		TEXT("Start rec"),
-		WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
-		420,
-		360,
-		80,
-		50,
-		hWnd,
-		(HMENU)ID_BUTTON8,
-		hInstance,
-		nullptr);
-
-	hwndButton = CreateWindow(
-		TEXT("button"),
-		TEXT("Stop rec"),
-		WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
-		500,
-		360,
-		80,
-		50,
-		hWnd,
-		(HMENU)ID_BUTTON9,
-		hInstance,
-		nullptr);*/
-
 	hwndButton = CreateWindow(
 		TEXT("button"),
 		TEXT("Replay"),
 		WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
-		590,
-		360,
-		80,
-		50,
+		590, 360, 80, 50,
 		hWnd,
 		(HMENU)ID_BUTTON10,
 		hInstance,
@@ -301,19 +250,11 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 		TEXT("button"),
 		TEXT("Reset"),
 		WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
-		670,
-		360,
-		80,
-		50,
+		670, 360, 80, 50,
 		hWnd,
 		(HMENU)ID_BUTTON11,
 		hInstance,
 		nullptr);
-
-	/*
-	hwndButton = CreateWindow(TEXT("button"), TEXT("Timer OFF"),
-		WS_CHILD | WS_VISIBLE | BS_AUTORADIOBUTTON,
-		300, 200, 100, 30, hWnd, (HMENU)ID_RBUTTON2, GetModuleHandle(NULL), NULL);*/
 
 	if (!hWnd)
 	{
@@ -415,12 +356,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		switch (wParam)
 		{
 		case TMR_1:
-			if (arm_pos[0][0].size() > 0 && !update_pos)
+			if (arm_pos[0][0].size() > 0 && !update_pos) // If vector isn't empty and Start rec in unticked
 			{
-				if (iter == arm_pos[0][0].size() - 1)
+				if (iter == arm_pos[0][0].size() - 1) // If reached end of replay vector
 				{
 					KillTimer(hWnd, TMR_1);
-					iter = 0;
+					iter = 0; // Move to start of replay
 					break;
 				}
 				get_pos();
@@ -514,6 +455,7 @@ void paint(HDC hdc)
 	SolidBrush brushRed(Color::Red);
 	SolidBrush brushBlack(Color::Black);
 
+	// Draw arms
 	graphics.DrawLine(&pen1, arm1_start, arm1_end);
 	graphics.DrawLine(&pen1, arm2_start, arm2_end);
 	graphics.DrawEllipse(&pen2, (REAL)(arm1_start.X - arm1_length), (REAL)(arm1_start.Y - arm1_length), (REAL)arm1_length * 2, (REAL)arm1_length * 2);
@@ -521,12 +463,9 @@ void paint(HDC hdc)
 	graphics.FillEllipse(&brushRed, arm1_end.X - circle_size / 2, arm1_end.Y - circle_size / 2, circle_size, circle_size);
 	graphics.FillEllipse(&brushRed, arm2_end.X - circle_size / 2, arm2_end.Y - circle_size / 2, circle_size, circle_size);
 
-	graphics.FillPolygon(&brushBlack, triangles[0], 3);
-	graphics.FillPolygon(&brushBlack, triangles[1], 3);
-	graphics.FillPolygon(&brushBlack, triangles[2], 3);
-	graphics.FillPolygon(&brushBlack, triangles[3], 3);
-	graphics.FillPolygon(&brushBlack, triangles[4], 3);
-	graphics.FillPolygon(&brushBlack, triangles[5], 3);
+	// Draw triangles
+	for(int i = 0; i < N_TRIANGLE; i++)
+		graphics.FillPolygon(&brushBlack, triangles[i], 3);
 }
 
 void arm1_moveUp()
@@ -619,7 +558,7 @@ void arm2_moveDown()
 
 void grab()
 {
-	for (int i = 0; i < N_TRIANGLE; i++)
+	for (int i = 0; i < N_TRIANGLE; i++) // If any of the triangles is already grabbed
 		if (grabbed[i])
 			return;
 
@@ -710,5 +649,5 @@ void get_pos()
 		triangles[i][2].Y = triangle_pos[i][1][iter] - 10;
 	}
 
-	iter++;
+	iter++; // Move to the next new position in replay vector
 }
