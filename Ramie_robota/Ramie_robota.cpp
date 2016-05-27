@@ -11,35 +11,20 @@
 const REAL circle_size = 7;
 const REAL arm1_length = 150;
 const REAL arm2_length = 150;
+const REAL arm_speed = 2;
+const int N_TRIANGLE = 6;
 
 HWND hwndButton;
 RECT drawArea1 = { 0, 0, 310, 200 };
 
+REAL arc1 = 30;
+REAL arc2 = 30;
 PointF arm1_start(0.0, (REAL)drawArea1.bottom);
 PointF arm1_end(arm1_length, (REAL)drawArea1.bottom);
 PointF arm2_start(arm1_end.X, arm1_end.Y);
 PointF arm2_end((REAL)(arm1_length + arm2_length), (REAL)drawArea1.bottom);
-PointF triangle1_1((REAL)200, (REAL)(drawArea1.bottom));
-PointF triangle1_2((REAL)220, (REAL)(drawArea1.bottom));
-PointF triangle1_3((REAL)210, (REAL)(drawArea1.bottom - 20));
-PointF triangle2_1((REAL)221, (REAL)(drawArea1.bottom));
-PointF triangle2_2((REAL)241, (REAL)(drawArea1.bottom));
-PointF triangle2_3((REAL)231, (REAL)(drawArea1.bottom - 20));
-PointF triangle3_1((REAL)242, (REAL)(drawArea1.bottom));
-PointF triangle3_2((REAL)262, (REAL)(drawArea1.bottom));
-PointF triangle3_3((REAL)252, (REAL)(drawArea1.bottom - 20));
-PointF triangle4_1((REAL)200, (REAL)(drawArea1.bottom - 21));
-PointF triangle4_2((REAL)220, (REAL)(drawArea1.bottom - 21));
-PointF triangle4_3((REAL)210, (REAL)(drawArea1.bottom - 41));
-PointF triangle5_1((REAL)221, (REAL)(drawArea1.bottom - 21));
-PointF triangle5_2((REAL)241, (REAL)(drawArea1.bottom - 21));
-PointF triangle5_3((REAL)231, (REAL)(drawArea1.bottom - 41));
-PointF triangle6_1((REAL)242, (REAL)(drawArea1.bottom - 21));
-PointF triangle6_2((REAL)262, (REAL)(drawArea1.bottom - 21));
-PointF triangle6_3((REAL)252, (REAL)(drawArea1.bottom - 41));
-REAL arc1 = 30;
-REAL arc2 = 30;
-bool grabbed[6] = { false, false, false, false, false, false };
+PointF triangles[N_TRIANGLE][3];
+bool grabbed[N_TRIANGLE] = { false, false, false, false, false, false };
 
 void initialize(void);
 void paint(HDC);
@@ -358,6 +343,7 @@ int OnCreate(HWND window)
 
 void initialize()
 {
+	// Initialize arms coordinates
 	arm1_end.Y = (REAL)(drawArea1.bottom - arm1_length * sin(arc1 * (M_PI / 180)));
 	arm1_end.X = (REAL)(arm1_length * abs(cos(arc1 * (M_PI / 180))));
 
@@ -365,6 +351,31 @@ void initialize()
 
 	arm2_end.Y = (REAL)(arm2_start.Y - arm2_length * sin(arc2 * (M_PI / 180)));
 	arm2_end.X = (REAL)(arm2_length * cos(arc2 * (M_PI / 180)) + arm2_start.X);
+
+	//Initialize triangles coordinates
+	triangles[0][0] = PointF((REAL)200, (REAL)(drawArea1.bottom));
+	triangles[0][1] = PointF((REAL)220, (REAL)(drawArea1.bottom));
+	triangles[0][2] = PointF((REAL)210, (REAL)(drawArea1.bottom - 20));
+
+	triangles[1][0] = PointF((REAL)221, (REAL)(drawArea1.bottom));
+	triangles[1][1] = PointF((REAL)241, (REAL)(drawArea1.bottom));
+	triangles[1][2] = PointF((REAL)231, (REAL)(drawArea1.bottom - 20));
+
+	triangles[2][0] = PointF((REAL)242, (REAL)(drawArea1.bottom));
+	triangles[2][1] = PointF((REAL)262, (REAL)(drawArea1.bottom));
+	triangles[2][2] = PointF((REAL)252, (REAL)(drawArea1.bottom - 20));
+
+	triangles[3][0] = PointF((REAL)200, (REAL)(drawArea1.bottom - 21));
+	triangles[3][1] = PointF((REAL)220, (REAL)(drawArea1.bottom - 21));
+	triangles[3][2] = PointF((REAL)210, (REAL)(drawArea1.bottom - 41));
+
+	triangles[4][0] = PointF((REAL)221, (REAL)(drawArea1.bottom - 21));
+	triangles[4][1] = PointF((REAL)241, (REAL)(drawArea1.bottom - 21));
+	triangles[4][2] = PointF((REAL)231, (REAL)(drawArea1.bottom - 41));
+
+	triangles[5][0] = PointF((REAL)242, (REAL)(drawArea1.bottom - 21));
+	triangles[5][1] = PointF((REAL)262, (REAL)(drawArea1.bottom - 21));
+	triangles[5][2] = PointF((REAL)252, (REAL)(drawArea1.bottom - 41));
 }
 
 void repaintWindow(HWND hWnd, HDC &hdc, PAINTSTRUCT &ps, RECT *drawArea)
@@ -394,26 +405,19 @@ void paint(HDC hdc)
 	graphics.FillEllipse(&brushRed, arm1_end.X - circle_size / 2, arm1_end.Y - circle_size / 2, circle_size, circle_size);
 	graphics.FillEllipse(&brushRed, arm2_end.X - circle_size / 2, arm2_end.Y - circle_size / 2, circle_size, circle_size);
 
-	PointF triangle1[3] = { triangle1_1, triangle1_2, triangle1_3 };
-	PointF triangle2[3] = { triangle2_1, triangle2_2, triangle2_3 };
-	PointF triangle3[3] = { triangle3_1, triangle3_2, triangle3_3 };
-	PointF triangle4[3] = { triangle4_1, triangle4_2, triangle4_3 };
-	PointF triangle5[3] = { triangle5_1, triangle5_2, triangle5_3 };
-	PointF triangle6[3] = { triangle6_1, triangle6_2, triangle6_3 };
-
-	graphics.FillPolygon(&brushBlack, triangle1, 3);
-	graphics.FillPolygon(&brushBlack, triangle2, 3);
-	graphics.FillPolygon(&brushBlack, triangle3, 3);
-	graphics.FillPolygon(&brushBlack, triangle4, 3);
-	graphics.FillPolygon(&brushBlack, triangle5, 3);
-	graphics.FillPolygon(&brushBlack, triangle6, 3);
+	graphics.FillPolygon(&brushBlack, triangles[0], 3);
+	graphics.FillPolygon(&brushBlack, triangles[1], 3);
+	graphics.FillPolygon(&brushBlack, triangles[2], 3);
+	graphics.FillPolygon(&brushBlack, triangles[3], 3);
+	graphics.FillPolygon(&brushBlack, triangles[4], 3);
+	graphics.FillPolygon(&brushBlack, triangles[5], 3);
 }
 
 void arm1_moveUp()
 {
 	if (arc1 < 90 && arm2_end.X > drawArea1.left && arm1_end.Y > drawArea1.top && arm1_end.X < drawArea1.right && arm2_end.Y > drawArea1.top && arm2_end.X < drawArea1.right)
 	{
-		arc1++;
+		arc1 += arm_speed;
 
 		arm1_end.Y = (REAL)(drawArea1.bottom - arm1_length * sin(arc1 * (M_PI / 180)));
 		arm1_end.X = (REAL)(arm1_length * abs(cos(arc1 * (M_PI / 180))));
@@ -428,7 +432,7 @@ void arm1_moveDown()
 {
 	if (arc1 > 0 && arm2_end.Y < drawArea1.bottom)
 	{
-		arc1--;
+		arc1 -= arm_speed;
 
 		arm1_end.Y = (REAL)(drawArea1.bottom - arm1_length * sin(arc1 * (M_PI / 180)));
 		arm1_end.X = (REAL)(arm1_length * abs(cos(arc1 * (M_PI / 180))));
@@ -443,22 +447,25 @@ void arm2_moveUp()
 {
 	if (arm2_end.X > drawArea1.left && arm2_end.Y > drawArea1.top && arm2_end.X < drawArea1.right)
 	{
-		arc2++;
+		arc2 += arm_speed;
 
 		arm2_end.Y = (REAL)(arm2_start.Y - arm2_length * sin(arc2 * (M_PI / 180)));
 		arm2_end.X = (REAL)(arm2_length * cos(arc2 * (M_PI / 180)) + arm2_start.X);
 
-		if (grabbed[0])
-		{
-			triangle1_1.X = arm2_end.X - 10;
-			triangle1_1.Y = arm2_end.Y + 10;
+		for (int i = 0; i < N_TRIANGLE; i++)
+			if (grabbed[i])
+			{
+				triangles[i][0].X = arm2_end.X - 10;
+				triangles[i][0].Y = arm2_end.Y + 10;
 
-			triangle1_2.X = arm2_end.X + 10;
-			triangle1_2.Y = arm2_end.Y + 10;
+				triangles[i][1].X = arm2_end.X + 10;
+				triangles[i][1].Y = arm2_end.Y + 10;
 
-			triangle1_3.X = arm2_end.X;
-			triangle1_3.Y = arm2_end.Y - 10;
-		}
+				triangles[i][2].X = arm2_end.X;
+				triangles[i][2].Y = arm2_end.Y - 10;
+
+				break;
+			}
 	}
 }
 
@@ -466,45 +473,62 @@ void arm2_moveDown()
 {
 	if ((arm2_end.Y < drawArea1.bottom || (arm2_end.Y == drawArea1.bottom && arc2 == 180)) && arm2_end.X < drawArea1.right)
 	{
-		arc2--;
+		arc2 -= arm_speed;
 
 		arm2_end.Y = (REAL)(arm2_start.Y - arm2_length * sin(arc2 * (M_PI / 180)));
 		arm2_end.X = (REAL)(arm2_length * cos(arc2 * (M_PI / 180)) + arm2_start.X);
 
-		if (grabbed[0])
-		{
-			triangle1_1.X = arm2_end.X - 10;
-			triangle1_1.Y = arm2_end.Y + 10;
+		for (int i = 0; i < N_TRIANGLE; i++)
+			if (grabbed[i])
+			{
+				triangles[i][0].X = arm2_end.X - 10;
+				triangles[i][0].Y = arm2_end.Y + 10;
 
-			triangle1_2.X = arm2_end.X + 10;
-			triangle1_2.Y = arm2_end.Y + 10;
+				triangles[i][1].X = arm2_end.X + 10;
+				triangles[i][1].Y = arm2_end.Y + 10;
 
-			triangle1_3.X = arm2_end.X;
-			triangle1_3.Y = arm2_end.Y - 10;
-		}
+				triangles[i][2].X = arm2_end.X;
+				triangles[i][2].Y = arm2_end.Y - 10;
+
+				break;
+			}
 	}
 }
 
 void grab()
 {
-	REAL distance1 = sqrt((arm2_end.X - triangle1_3.X) * (arm2_end.X - triangle1_3.X) + (arm2_end.Y - (triangle1_3.Y + 10)) * (arm2_end.Y - (triangle1_3.Y + 10)));
+	for (int i = 0; i < N_TRIANGLE; i++)
+		if (grabbed[i])
+			return;
 
-	if (distance1 < 5)
+	for (int i = 0; i < N_TRIANGLE; i++)
 	{
-		grabbed[0] = true;
+		REAL distance = sqrt((arm2_end.X - triangles[i][2].X) * (arm2_end.X - triangles[i][2].X) + (arm2_end.Y - (triangles[i][2].Y + 10)) * (arm2_end.Y - (triangles[i][2].Y + 10)));
 
-		triangle1_1.X = arm2_end.X - 10;
-		triangle1_1.Y = arm2_end.Y + 10;
+		if (distance < 5)
+		{
+			grabbed[i] = true;
 
-		triangle1_2.X = arm2_end.X + 10;
-		triangle1_2.Y = arm2_end.Y + 10;
+			triangles[i][0].X = arm2_end.X - 10;
+			triangles[i][0].Y = arm2_end.Y + 10;
 
-		triangle1_3.X = arm2_end.X;
-		triangle1_3.Y = arm2_end.Y - 10;
+			triangles[i][1].X = arm2_end.X + 10;
+			triangles[i][1].Y = arm2_end.Y + 10;
+
+			triangles[i][2].X = arm2_end.X;
+			triangles[i][2].Y = arm2_end.Y - 10;
+
+			break;
+		}
 	}
 }
 
 void drop()
 {
-	grabbed[0] = false;
+	for (int i = 0; i < N_TRIANGLE; i++)
+		if (grabbed[i])
+		{
+			grabbed[i] = false;
+			break;
+		}
 }
