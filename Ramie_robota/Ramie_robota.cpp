@@ -301,7 +301,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			arm1_moveDown();
 			repaintWindow(hWnd, hdc, ps, &drawArea1);
 			break;
-		case ID_BUTTON4: // Arm 2 up
+		case ID_BUTTON4: // Arm 2 
 			arm2_moveUp();
 			repaintWindow(hWnd, hdc, ps, &drawArea1);
 			break;
@@ -322,6 +322,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			update();
 			break;
 		case ID_BUTTON9: // Stop rec
+			update();
 			update_pos = false;
 			break;
 		case ID_BUTTON10: // Replay
