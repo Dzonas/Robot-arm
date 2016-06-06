@@ -14,13 +14,14 @@ const REAL circle_size = 7;
 const REAL arm1_length = 150;
 const REAL arm2_length = 150;
 const REAL arm_speed = 2;
+const REAL arc_start = 30;
 const int N_TRIANGLE = 6;
 
 HWND hwndButton;
 RECT drawArea1 = { 0, 0, 310, 200 };
 
-REAL arc1 = 30;
-REAL arc2 = 30;
+REAL arm1_arc = arc_start;
+REAL arm2_arc = arc_start;
 PointF arm1_start(0.0, (REAL)drawArea1.bottom);
 PointF arm1_end(arm1_length, (REAL)drawArea1.bottom);
 PointF arm2_start(arm1_end.X, arm1_end.Y);
@@ -248,11 +249,20 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
 	hwndButton = CreateWindow(
 		TEXT("button"),
-		TEXT("Reset"),
+		TEXT("Reset replay"),
 		WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
-		670, 360, 80, 50,
+		670, 360, 100, 50,
 		hWnd,
 		(HMENU)ID_BUTTON11,
+		hInstance,
+		nullptr);
+	hwndButton = CreateWindow(
+		TEXT("button"),
+		TEXT("Reset pos"),
+		WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
+		770, 360, 80, 50,
+		hWnd,
+		(HMENU)ID_BUTTON12,
 		hInstance,
 		nullptr);
 
@@ -328,8 +338,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		case ID_BUTTON10: // Replay
 			SetTimer(hWnd, TMR_1, 50, 0);
 			break;
-		case ID_BUTTON11: // Reset
+		case ID_BUTTON11: // Reset replay
 			drop_update();
+			break;
+		case ID_BUTTON12: // Reset pos
+			arm1_arc = arc_start;
+			arm2_arc = arc_start;
+			initialize();
+			drop();
+			repaintWindow(hWnd, hdc, ps, &drawArea1);
 			break;
 		case IDM_ABOUT:
 			DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
@@ -402,13 +419,13 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 void initialize()
 {
 	// Initialize arms coordinates
-	arm1_end.Y = (REAL)(drawArea1.bottom - arm1_length * sin(arc1 * (M_PI / 180)));
-	arm1_end.X = (REAL)(arm1_length * abs(cos(arc1 * (M_PI / 180))));
+	arm1_end.Y = (REAL)(drawArea1.bottom - arm1_length * sin(arm1_arc * (M_PI / 180)));
+	arm1_end.X = (REAL)(arm1_length * abs(cos(arm1_arc * (M_PI / 180))));
 
 	arm2_start = arm1_end;
 
-	arm2_end.Y = (REAL)(arm2_start.Y - arm2_length * sin(arc2 * (M_PI / 180)));
-	arm2_end.X = (REAL)(arm2_length * cos(arc2 * (M_PI / 180)) + arm2_start.X);
+	arm2_end.Y = (REAL)(arm2_start.Y - arm2_length * sin(arm2_arc * (M_PI / 180)));
+	arm2_end.X = (REAL)(arm2_length * cos(arm2_arc * (M_PI / 180)) + arm2_start.X);
 
 	//Initialize triangles coordinates
 	triangles[0][0] = PointF((REAL)200, (REAL)(drawArea1.bottom));
@@ -459,8 +476,6 @@ void paint(HDC hdc)
 	// Draw arms
 	graphics.DrawLine(&pen1, arm1_start, arm1_end);
 	graphics.DrawLine(&pen1, arm2_start, arm2_end);
-	graphics.DrawEllipse(&pen2, (REAL)(arm1_start.X - arm1_length), (REAL)(arm1_start.Y - arm1_length), (REAL)arm1_length * 2, (REAL)arm1_length * 2);
-	graphics.DrawEllipse(&pen3, (REAL)(arm2_start.X - arm2_length), (REAL)(arm2_start.Y - arm2_length), (REAL)arm2_length * 2, (REAL)arm2_length * 2);
 	graphics.FillEllipse(&brushRed, arm1_end.X - circle_size / 2, arm1_end.Y - circle_size / 2, circle_size, circle_size);
 	graphics.FillEllipse(&brushRed, arm2_end.X - circle_size / 2, arm2_end.Y - circle_size / 2, circle_size, circle_size);
 
@@ -471,12 +486,12 @@ void paint(HDC hdc)
 
 void arm1_moveUp()
 {
-	if (arc1 < 90 && arm2_end.X > drawArea1.left && arm1_end.Y > drawArea1.top && arm1_end.X < drawArea1.right && arm2_end.Y > drawArea1.top && arm2_end.X < drawArea1.right)
+	if (arm1_arc < 90 && arm2_end.X > drawArea1.left && arm1_end.Y > drawArea1.top && arm1_end.X < drawArea1.right && arm2_end.Y > drawArea1.top && arm2_end.X < drawArea1.right)
 	{
-		arc1 += arm_speed;
+		arm1_arc += arm_speed;
 
-		arm1_end.Y = (REAL)(drawArea1.bottom - arm1_length * sin(arc1 * (M_PI / 180)));
-		arm1_end.X = (REAL)(arm1_length * abs(cos(arc1 * (M_PI / 180))));
+		arm1_end.Y = (REAL)(drawArea1.bottom - arm1_length * sin(arm1_arc * (M_PI / 180)));
+		arm1_end.X = (REAL)(arm1_length * abs(cos(arm1_arc * (M_PI / 180))));
 
 		arm2_start = arm1_end;
 
@@ -486,12 +501,12 @@ void arm1_moveUp()
 
 void arm1_moveDown()
 {
-	if (arc1 > 0 && arm2_end.Y < drawArea1.bottom)
+	if (arm1_arc > 0 && arm2_end.Y < drawArea1.bottom)
 	{
-		arc1 -= arm_speed;
+		arm1_arc -= arm_speed;
 
-		arm1_end.Y = (REAL)(drawArea1.bottom - arm1_length * sin(arc1 * (M_PI / 180)));
-		arm1_end.X = (REAL)(arm1_length * abs(cos(arc1 * (M_PI / 180))));
+		arm1_end.Y = (REAL)(drawArea1.bottom - arm1_length * sin(arm1_arc * (M_PI / 180)));
+		arm1_end.X = (REAL)(arm1_length * abs(cos(arm1_arc * (M_PI / 180))));
 
 		arm2_start = arm1_end;
 
@@ -503,10 +518,10 @@ void arm2_moveUp()
 {
 	if (arm2_end.X > drawArea1.left && arm2_end.Y > drawArea1.top && arm2_end.X < drawArea1.right)
 	{
-		arc2 += arm_speed;
+		arm2_arc += arm_speed;
 
-		arm2_end.Y = (REAL)(arm2_start.Y - arm2_length * sin(arc2 * (M_PI / 180)));
-		arm2_end.X = (REAL)(arm2_length * cos(arc2 * (M_PI / 180)) + arm2_start.X);
+		arm2_end.Y = (REAL)(arm2_start.Y - arm2_length * sin(arm2_arc * (M_PI / 180)));
+		arm2_end.X = (REAL)(arm2_length * cos(arm2_arc * (M_PI / 180)) + arm2_start.X);
 
 		for (int i = 0; i < N_TRIANGLE; i++)
 			if (grabbed[i])
@@ -530,12 +545,12 @@ void arm2_moveUp()
 
 void arm2_moveDown()
 {
-	if ((arm2_end.Y < drawArea1.bottom || (arm2_end.Y == drawArea1.bottom && arc2 == 180)) && arm2_end.X < drawArea1.right)
+	if ((arm2_end.Y < drawArea1.bottom || (arm2_end.Y == drawArea1.bottom && arm2_arc == 180)) && arm2_end.X < drawArea1.right)
 	{
-		arc2 -= arm_speed;
+		arm2_arc -= arm_speed;
 
-		arm2_end.Y = (REAL)(arm2_start.Y - arm2_length * sin(arc2 * (M_PI / 180)));
-		arm2_end.X = (REAL)(arm2_length * cos(arc2 * (M_PI / 180)) + arm2_start.X);
+		arm2_end.Y = (REAL)(arm2_start.Y - arm2_length * sin(arm2_arc * (M_PI / 180)));
+		arm2_end.X = (REAL)(arm2_length * cos(arm2_arc * (M_PI / 180)) + arm2_start.X);
 
 		for (int i = 0; i < N_TRIANGLE; i++)
 			if (grabbed[i])
